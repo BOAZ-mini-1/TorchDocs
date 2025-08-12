@@ -1,17 +1,21 @@
 # TorchDocs
 - Directory architecture (draft)
-- raw 폴더는 용량이 커서 충돌이 일어나므로 업로드 하지 않음 (.gitignore 참고)
+- raw 폴더는 용량이 커서 충돌이 일어나므로 업로드 하지 않았음 (.gitignore 참고)
 
 ```
 TorchDocs/
+├─ .gitignore/
 ├─ data/
-│  ├─ raw/                 # HTML 원본 (그대로 저장)
-│  │  └─ stable/2.4/...    # 버전별/섹션별 파일 구조
-│  └─ processed/
-│     ├─ documents.jsonl   # 문서 메타 
-│     ├─ chunks.jsonl      # 청킹 결과 (검색 단위)
-│     ├─ snippets.jsonl    # code snippet만 모은 파일
-│     └─ embeddings.npy    # 임베딩 결과
+│  ├─ raw/                 # HTML 원본 (version 별 ZIP 파일)
+│  │  ├─ pytorch_docs_2.8.zip
+│  │  └─ ...
+│  └─ processed/           # 전처리 완료된 version별 jsonl 파일
+│     ├─ torchdocs_2.8_chunks.jsonl
+│     └─ ...
+├─ preprocessing.py        # HTML 원본 전처리 스크립트
+├─ qa_chunks.py            # .jsonl 파일 품질 검사 스크립트
+├─ script_guide.txt        # 커맨드 라인 입력 가이드
+│
 ├─ indexes/
 │  ├─ chroma/              # Q&A index (vectorDB)
 │  └─ snippets_chroma/     # snippet index (vectorDB)
