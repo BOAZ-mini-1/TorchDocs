@@ -1,5 +1,6 @@
 # TorchDocs
 - Directory architecture (draft)
+- raw 폴더는 용량이 커서 충돌이 일어나므로 업로드 하지 않음 (.gitignore 참고)
 
 ```
 TorchDocs/
