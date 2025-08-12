@@ -5,7 +5,6 @@
 TorchDocs/
 ├─ data/
 │  ├─ raw/                 # HTML 원본 (그대로 저장)
-│  ├─ md/                  # HTML → Markdown/Text 변환본
 │  │  └─ stable/2.4/...    # 버전별/섹션별 파일 구조
 │  └─ processed/
 │     ├─ documents.jsonl   # 문서 메타 
