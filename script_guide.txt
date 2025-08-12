@@ -1,0 +1,24 @@
+# 1. 샘플만 먼저 돌려 품질 확인(--limit 150) > clear
+python preprocessing.py \
+  --zip data/raw/pytorch_docs_2.8.zip \
+  --out data/processed/torchdocs_2.8_chunks_sample.jsonl \
+  --limit 150 \
+  --max_tokens 400 --overlap 60 \
+  --default_version 2.8 \
+  --force_version 2.8 \
+  --ignore_canonical \
+  --max_code_lines 20
+
+# 2. 전체 실행 (--limit 0 또는 옵션 제거) > clear
+python preprocessing.py \
+  --zip data/raw/pytorch_docs_2.8.zip \
+  --out data/processed/torchdocs_2.8_chunks.jsonl \
+  --max_tokens 350 --overlap 60 \
+  --default_version 2.8 \
+  --force_version 2.8 \
+  --ignore_canonical \
+  --max_code_lines 20
+
+# 3. 각 jsonl 파일 품질 검사
+python qa_chunks.py data/processed/torchdocs_2.8_chunks.jsonl
+
