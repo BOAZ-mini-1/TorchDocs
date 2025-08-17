@@ -6,31 +6,56 @@
 TorchDocs/
 ├─ .gitignore/
 ├─ data/
-│  ├─ raw/                 # HTML 원본 (version 별 ZIP 파일)
+│  ├─ raw/                   # HTML 원본 (version 별 ZIP 파일)
 │  │  ├─ pytorch_docs_2.8.zip
 │  │  └─ ...
-│  └─ processed/           # 전처리 완료된 version별 jsonl 파일
-│     ├─ torchdocs_2.8_chunks.jsonl
-│     └─ ...
-├─ preprocessing.py        # HTML 원본 전처리 스크립트
-├─ qa_chunks.py            # .jsonl 파일 품질 검사 스크립트
-├─ script_guide.txt        # 커맨드 라인 입력 가이드
+│  ├─ processed/            # 전처리 완료된 version별 jsonl 파일
+│  │  ├─ token_analysis.txt # 각 json 파일이 512 토큰을 넘는지 검사한 결과 로그
+│  │  ├─ torchdocs_2.8_chunks_e5.jsonl
+│  │  └─ ...
+│  └── eval/                # 평가 데이터셋(RAGAS 합성 or 수작업)
+│       ├── ragas_synth.jsonl
+│       └── human_gold.jsonl
+├─ preprocessing.py         # HTML 원본 전처리 스크립트
+├─ qa_chunks.py             # .jsonl 파일 품질 검사 스크립트
+├─ token_analyzer.py        # 토큰 수 초과 검사
+├─ script_guide.txt         # CLI 입력 가이드
 │
-├─ indexes/
-│  ├─ chroma/              # Q&A index (vectorDB)
-│  └─ snippets_chroma/     # snippet index (vectorDB)
-├─ src/
-│  ├─ crawl.py             # (optional) URL 리스트 받아 HTML 저장
-│  ├─ transform.py         # HTML→Markdown/Text, 잡음 제거, 메타 추출
-│  ├─ make_chunks.py       # 문서→청킹(JSONL 생성), 코드블록 추출
-│  ├─ build_index.py       # chunks/snippets → vectorDB 구축
-│  ├─ rag_qa.py            # Q&A mode chain (w/ version filter)
-│  └─ rag_snippet.py       # snippet mode chain
-├─ app/
-│  └─ ui.py                # Streamlit/Gradio UI (모드 토글, 버전 선택, 인용 표시)
-├─ configs/
-│  └─ default.yaml         # 경로/파라미터(chuck_size, k값 등)
-├─ .env.example            # OPENAI_API_KEY=...
-├─ requirements.txt
-└─ README.md
+│ # ==== 여기까지 현재 구현 완료(8/17) ====
+│
+├── embeddings/
+│   ├── e5-large-v2/              # 임베딩 모델별 디렉토리
+│   │   ├── passages.npy          # 문서 임베딩 (float32, L2 norm 전)
+│   │   ├── ids.npy               # 레코드 인덱스→id 매핑
+│   │   └── meta.parquet          # id, title, url, etc.
+├── index/
+│   └── e5-large-v2/
+│       ├── faiss.index           # FAISS 인덱스(FlatIP/HNSW/IVF 등)
+│       └── stats.json            # 차원, ntotal, 빌드 파라미터
+├── retrieval/
+│   ├── configs/
+│   │   └── default.yaml          # k, mmr, reranker 등 하이퍼파라미터
+│   ├── search.py                 # 1차 검색(FAISS/BM25)
+│   ├── mmr.py                    # 다양성 제어
+│   ├── rerank.py                 # cross-encoder / bge-reranker
+│   └── pipeline.py               # retrieve(query) → candidates 정식 API
+├── generator/
+│   ├── prompt_templates/         # 시스템/컨텍스트 프롬프트
+│   └── generate.py               # candidates + question → answer
+├── evaluation/
+│   ├── build_synth_dataset.py    # ragas 합성 평가셋 생성
+│   ├── run_ragas.py              # ragas 실행 스크립트
+│   └── reports/                  # 지표 CSV/JSON, 그래프
+├── scripts/                      # CLI: 인덱스/평가/배치 유틸
+│   ├── build_embeddings.py
+│   ├── build_faiss.py
+│   ├── batch_retrieve.py
+│   └── ablation_sweep.py
+├── configs/
+│   └── project.yaml              # 공통 경로/모델명/장치 설정
+├── env/                          # 환경(선택)
+│   └── environment.yml
+├── tests/                        # 유닛 테스트
+└── README.md
+
 ```

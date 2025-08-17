@@ -1,0 +1,119 @@
+# 2.8 버전
+
+ === Token Length Report ===
+File           : data/processed/torchdocs_2.8_chunks_e5.jsonl
+Tokenizer      : sentence-transformers/all-MiniLM-L6-v2
+Text field     : text_for_embedding
+Max length     : 512
+Total chunks   : 6410
+> 512 tokens: 1  (0.02%)
+Min/Max/Avg    : 6 / 1926 / 362.89
+
+=== Top 10 longest chunks ===
+[#1856] tokens=1926  preview='Supported #  # mypy: allow-untyped-defs import torch import torch._dynamo as torchdynamo class AssumeConstantResult ( to'
+[#39] tokens=505  preview='Full API #  ##grad inheritance relationships base type class documentation class adam inheritance relationships base typ'
+[#60] tokens=505  preview='Full API #  ##ach _ addcmul _ outf ( at : : tensorlist, at : : tensorlist, at : : tensorlist, at : : arrayref < at : : s'
+[#103] tokens=505  preview='Full API #  ##nn _ fused _ lstm _ cell _ backward _ impl _ outf function documentation function at : : _ thnn _ fused _ '
+[#276] tokens=505  preview='Full API #  ##ssel _ y0 _ out function documentation function at : : special _ bessel _ y0 _ outf function documentation'
+[#307] tokens=505  preview='Full API #  ##nn _ rnn _ backward _ out ( at : : tensor &, at : : tensor &, at : : tensor &, at : : tensorlist, const at'
+[#412] tokens=505  preview='Full API #  ##tion _ transpose _ backward ( const at : : tensor &, const at : : tensor &, const at : : tensor &, c10 : :'
+[#548] tokens=505  preview='Full API #  ##zer & ) function documentation template function torch : : optim : : serialize ( serialize : : inputarchiv'
+[#570] tokens=505  preview='Full API #  ##ef torch : : nn : : functional : : adaptivemaxpool2dfuncoptions typedef documentation typedef torch : : nn'
+[#602] tokens=505  preview='Functions #  ##ach _ non _ finite _ check _ and _ unscale _ out function documentation function at : : _ amp _ foreach _'
+
+
+# 2.7 버전
+
+=== Token Length Report ===
+File           : data/processed/torchdocs_2.7_chunks_e5.jsonl
+Tokenizer      : sentence-transformers/all-MiniLM-L6-v2
+Text field     : text_for_embedding
+Max length     : 512
+Total chunks   : 8203
+> 512 tokens: 1  (0.01%)
+Min/Max/Avg    : 8 / 1926 / 85.73
+
+=== Top 10 longest chunks ===
+[#853] tokens=1926  preview='Supported ¶  # mypy: allow-untyped-defs import torch import torch._dynamo as torchdynamo class AssumeConstantResult ( to'
+[#6933] tokens=506  preview='A  ##ructured method ) ( torch. nn. utils. prune. lnstructured method ) ( torch. nn. utils. prune. pruningcontainer meth'
+[#164] tokens=505  preview='Module-level maintainers ¶  ##ved ) ( emeritus ) ivan yashchuk ( ivanyashchuk ) ( emeritus ) christian puhrsch ( cpuhrsc'
+[#370] tokens=505  preview='PyTorch FSDP2 ( fully_shard ) ¶  ##cts containing dtensor s to full state dicts themselves using dtensor apis like dtens'
+[#536] tokens=505  preview='Different ways to create a DTensor ¶  ##ype = none, layout = torch. strided, device _ mesh = none, placements = none ) r'
+[#624] tokens=505  preview='Transforms ¶  ##ly stable, thus it is recommended to use tanhtransform instead. note that one should use cache _ size = '
+[#742] tokens=505  preview='API Reference ¶  ##ent, torch. export. graph _ signature. symfloatargument, torch. export. graph _ signature. symboolarg'
+[#746] tokens=505  preview="API Reference ¶  ##ent ( name ='arg3 _ 1'), target = none ), inputspec ( kind = < inputkind. user _ input : 1 >, arg = t"
+[#825] tokens=505  preview='API Reference ¶  ##tion representing the python type the output of this node will have. returns the newly - created and '
+[#6948] tokens=505  preview='C  ##zer method ) constant _ ( ) ( in module torch. nn. init ) constantlr ( class in torch. optim. lr _ scheduler ) cons'
+
+
+# 2.6 버전
+
+=== Token Length Report ===
+File           : data/processed/torchdocs_2.6_chunks_e5.jsonl
+Tokenizer      : sentence-transformers/all-MiniLM-L6-v2
+Text field     : text_for_embedding
+Max length     : 512
+Total chunks   : 8093
+> 512 tokens: 1  (0.01%)
+Min/Max/Avg    : 8 / 1935 / 85.39
+
+=== Top 10 longest chunks ===
+[#846] tokens=1935  preview='Supported ¶  # mypy: allow-untyped-defs import torch import torch._dynamo as torchdynamo class AssumeConstantResult ( to'
+[#366] tokens=505  preview='PyTorch FSDP2 ( fully_shard ) ¶  ##cts containing dtensor s to full state dicts themselves using dtensor apis like dtens'
+[#437] tokens=505  preview='Collective functions ¶  ##oat ) + 4 * rank * ( 1 + 1 j ) > > > input = list ( input. chunk ( 4 ) ) > > > input [ tensor '
+[#816] tokens=505  preview='API Reference ¶  ##tion representing the python type the output of this node will have. returns the newly - created and '
+[#827] tokens=505  preview='API Reference ¶  ##oat ] ] ], slice, range, node, str, int, float, bool, complex, dtype, tensor, device, memory _ format'
+[#6905] tokens=505  preview='H  ##ical attribute ) ( torch. distributions. studentt. studentt attribute ) ( torch. distributions. transformed _ distr'
+[#6923] tokens=505  preview='L  ##ical method ) ( torch. distributions. poisson. poisson method ) ( torch. distributions. relaxed _ bernoulli. logitr'
+[#6961] tokens=505  preview='P  ##ils. averagedmodel method ) parameters _ to _ vector ( ) ( in module torch. nn. utils ) parametrizationlist ( class'
+[#6996] tokens=505  preview='S  ##ver method ) start _ processes ( ) ( in module torch. distributed. elastic. multiprocessing ) stat ( class in torch'
+[#7028] tokens=505  preview='T  ##ils. tensorboard. summary module torch. utils. tensorboard. writer module torch. utils. throughput _ benchmark modu'
+
+
+# 2.5 버전
+
+=== Token Length Report ===
+File           : data/processed/torchdocs_2.5_chunks_e5.jsonl
+Tokenizer      : sentence-transformers/all-MiniLM-L6-v2
+Text field     : text_for_embedding
+Max length     : 512
+Total chunks   : 8122
+> 512 tokens: 1  (0.01%)
+Min/Max/Avg    : 6 / 1935 / 82.50
+
+=== Top 10 longest chunks ===
+[#791] tokens=1935  preview='Supported ¶  # mypy: allow-untyped-defs import torch import torch._dynamo as torchdynamo class AssumeConstantResult ( to'
+[#763] tokens=505  preview='API Reference ¶  ##tion representing the python type the output of this node will have. returns the newly - created and '
+[#783] tokens=505  preview='API Reference ¶  ##ful : interpreter maintains an internal iterator over arguments passed to run and this method returns'
+[#6810] tokens=505  preview='M  ##ers torch. distributed. checkpoint. resharding torch. distributed. checkpoint. staging torch. distributed. checkpoi'
+[#6819] tokens=505  preview='M  ##nx. verification torch. optim torch. optim. adadelta torch. optim. adagrad torch. optim. adam torch. optim. adamax '
+[#6835] tokens=505  preview='P  ##meric _ suite _ fx ) prepare _ qat ( class in torch. ao. quantization ) prepare _ qat _ fx ( class in torch. ao. qu'
+[#6845] tokens=505  preview='R  ##ils. parametrize ) register _ post _ accumulate _ grad _ hook ( ) ( torch. tensor method ) register _ prehook ( ) ('
+[#6920] tokens=505  preview='Loading models from Hub ¶  ##ub token by setting the github _ token environment variable. default is false. * * kwargs ('
+[#7054] tokens=505  preview='Extending custom ops (created from Python or C++) ¶  ##tions. op _ name ( optional [ str ] ) – the name of the operator '
+[#7058] tokens=505  preview='Low-level APIs ¶  ##gh _ kernel ( ) to register a fallthrough. dispatch _ key – dispatch key that the input function sho'
+
+
+# 2.4 버전
+
+=== Token Length Report ===
+File           : data/processed/torchdocs_2.4_chunks_e5.jsonl
+Tokenizer      : sentence-transformers/all-MiniLM-L6-v2
+Text field     : text_for_embedding
+Max length     : 512
+Total chunks   : 7902
+> 512 tokens: 1  (0.01%)
+Min/Max/Avg    : 7 / 1992 / 80.63
+
+=== Top 10 longest chunks ===
+[#728] tokens=1992  preview='Supported ¶  # mypy: allow-untyped-defs import torch import torch._dynamo as torchdynamo class AssumeConstantResult ( to'
+[#378] tokens=505  preview='Collective functions ¶  ##atter _ object _ input _ list. source rank is based on global process group ( regardless of gr'
+[#6580] tokens=505  preview='G  ##ef ( ) ( torch. distributed. nn. api. remote _ module. remotemodule method ) get _ nontrivial _ guards ( ) ( torch.'
+[#6594] tokens=505  preview='I  ##ils. prune ) is _ quantized ( torch. tensor attribute ) is _ registered _ op ( ) ( torch. onnx. onnxregistry method'
+[#6609] tokens=505  preview='M  ##lli property ) ( torch. distributions. beta. beta property ) ( torch. distributions. binomial. binomial property ) '
+[#6686] tokens=505  preview='T  ##zation. quantization _ mappings module torch. ao. quantization. quantize _ fx module torch. ao. quantization. quant'
+[#6698] tokens=505  preview='T  ##nx. symbolic _ opset15 module torch. onnx. symbolic _ opset16 module torch. onnx. symbolic _ opset17 module torch. '
+[#6725] tokens=505  preview='Loading models from Hub ¶  ##ub token by setting the github _ token environment variable. default is false. * * kwargs ('
+[#7168] tokens=505  preview='Device-agnostic code ¶  ##ization error. one can set pytorch _ nvml _ based _ cuda _ check = 1 in your environment befor'
+[#157] tokens=504  preview='Module-level maintainers ¶  ##u performance ( torch inductor / triton / cuda ) natalia gimelshein ( ngimel ) edward yang'
+
