@@ -62,7 +62,7 @@ def search_similar_documents(query: str, k: int = 5):
     return results
 
 # Main
-test_query = "What is torch.nn.Module?"
+test_query = "how to tell if an object’s code is from a torch.package?"
 search_results = search_similar_documents(test_query, k=3)
 
 print(f"Q: {test_query}\n")
