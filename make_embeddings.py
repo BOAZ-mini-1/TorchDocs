@@ -8,15 +8,17 @@ from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 import uuid
 from datetime import datetime
+import pandas as pd
 
 def generate_unique_id() -> str:
     """고유 ID 생성"""
     return str(uuid.uuid4())
 
-# JSONL 파일에서 "text_for_embedding" 필드와 "id" 필드 추출
-def load_jsonl_text_and_ids(path, text_field="text_for_embedding", limit=0): ## 실험용 limit 설정 (전체 처리 시 0으로 설정)
+# JSONL 파일에서 "text_for_embedding" 필드와 "id" 필드, 메타데이터 추출
+def load_jsonl_text_and_ids(path, text_field="text_for_embedding", limit=0): # 실험용 limit 설정 (전체 처리 시 0으로 설정)
     texts = []
     ids = []
+    metadata_list = []
     
     with open(path, "r", encoding="utf-8") as f:
         for i, line in enumerate(f): # 라인별 json 파싱
@@ -36,12 +38,20 @@ def load_jsonl_text_and_ids(path, text_field="text_for_embedding", limit=0): ## 
             else:
                 texts.append("") # 필드가 없으면 빈 문자열로 처리
             
+            # 메타데이터 추출 (metadata 하위 필드만)
+            metadata = {}
+            if "metadata" in obj:
+                for key, value in obj["metadata"].items():
+                    metadata[key] = value
+            
+            metadata_list.append(metadata)
+            
             if limit and len(texts) >= limit:
                 break
     
-    return texts, ids
+    return texts, ids, metadata_list
 
-# JSONL 파일에서 "text_for_embedding" 필드만 추출 (기존 함수 유지)
+# JSONL 파일에서 "text_for_embedding" 필드만 추출
 def load_jsonl_text(path, field="text_for_embedding", limit=0): ## 실험용 limit 설정 (전체 처리 시 0으로 설정)
     data = []
     
@@ -80,6 +90,36 @@ def save_id_mapping(ids: List[str], output_file: str, input_file: str, model_nam
     
     print(f"📝 ID 매핑 저장 완료: {output_file}")
     return output_file
+
+# 메타데이터를 parquet 파일로 저장
+def save_metadata_parquet(metadata_list: List[Dict], output_file: str, input_file: str, model_name: str, pooling_strategy: str):
+    """메타데이터를 parquet 파일로 저장"""
+    try:
+        # DataFrame 생성
+        df = pd.DataFrame(metadata_list)
+        
+        # 메타데이터 정보 추가
+        metadata_info = {
+            "input_file": input_file,
+            "model_name": model_name,
+            "pooling_strategy": pooling_strategy,
+            "total_items": len(metadata_list),
+            "created_at": datetime.now().isoformat()
+        }
+        
+        # parquet 파일로 저장
+        df.to_parquet(output_file, index=False, engine='pyarrow')
+        
+        print(f"📊 메타데이터 저장 완료: {output_file}")
+        print(f"   컬럼 수: {len(df.columns)}")
+        print(f"   행 수: {len(df)}")
+        print(f"   컬럼: {', '.join(df.columns) if len(df.columns) <= 10 else ', '.join(df.columns[:10]) + '...'}")
+        
+        return output_file
+        
+    except Exception as e:
+        print(f"❌ 메타데이터 저장 오류: {e}")
+        return None
 
 # 임베딩 모델 정보 출력
 def get_model_info(model_name: str) -> Optional[Dict]:
@@ -208,11 +248,12 @@ def run_embedding_experiment(input_file, output_dir, model_name, batch_size=32, 
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     
-    # 데이터 로드 (텍스트와 ID 모두 추출)
+    # 데이터 로드 (텍스트, ID, 메타데이터 모두 추출)
     print(f"📄 데이터 로딩 중: {input_file}")
-    texts, ids = load_jsonl_text_and_ids(input_file, text_field="text_for_embedding", limit=limit)
+    texts, ids, metadata_list = load_jsonl_text_and_ids(input_file, text_field="text_for_embedding", limit=limit)
     print(f"📊 로드된 텍스트 수: {len(texts)}")
     print(f"📊 로드된 ID 수: {len(ids)}")
+    print(f"📊 로드된 메타데이터 수: {len(metadata_list)}")
     
     # 빈 텍스트 필터링
     valid_texts = [text for text in texts if text.strip()]
@@ -238,14 +279,39 @@ def run_embedding_experiment(input_file, output_dir, model_name, batch_size=32, 
         stem = Path(input_file).stem
         model_safe_name = model_name.replace("/", "_").replace("-", "_")
         
-        # 임베딩 파일 저장
-        embedding_output_file = output_path / f"embeddings_{stem}_{model_safe_name}_{pooling_strategy}.npy"
-        np.save(embedding_output_file, embeddings.astype(np.float32))
-        print(f"✅ 임베딩 저장 완료: {embedding_output_file} (shape={embeddings.shape})")
+        # 파일명에서 버전 추출 (예: torchdocs_2.4_chunks_e5 -> 2.4)
+        version = stem.split('_')[1] if '_' in stem and len(stem.split('_')) > 1 else stem
         
-        # ID 매핑 파일 저장
-        id_mapping_file = output_path / f"id_mapping_{stem}_{model_safe_name}_{pooling_strategy}.json"
-        save_id_mapping(ids, str(id_mapping_file), str(input_file), model_name, pooling_strategy)
+        # 임베딩 파일 저장 (skip 기능 포함)
+        embedding_output_file = output_path / f"embeddings_{version}_{model_safe_name}_{pooling_strategy}.npy"
+        embedding_skipped = False
+        if embedding_output_file.exists():
+            print(f"⏭️  이미 존재하는 임베딩 파일 건너뛰기: {embedding_output_file}")
+            existing_embeddings = np.load(embedding_output_file)
+            print(f"   기존 임베딩 shape: {existing_embeddings.shape}")
+            embeddings = existing_embeddings  # 기존 임베딩 사용
+            embedding_skipped = True
+        else:
+            np.save(embedding_output_file, embeddings.astype(np.float32))
+            print(f"✅ 임베딩 저장 완료: {embedding_output_file} (shape={embeddings.shape})")
+        
+        # ID 매핑 파일 저장 (skip 기능 포함)
+        id_mapping_file = output_path / f"id_{version}_{model_safe_name}_{pooling_strategy}.json"
+        id_mapping_skipped = False
+        if id_mapping_file.exists():
+            print(f"⏭️  이미 존재하는 ID 매핑 파일 건너뛰기: {id_mapping_file}")
+            # 기존 파일에서 ID 개수만 확인
+            with open(id_mapping_file, 'r', encoding='utf-8') as f:
+                existing_data = json.load(f)
+                existing_count = len(existing_data.get('id_mapping', []))
+            print(f"   기존 ID 매핑 개수: {existing_count}")
+            id_mapping_skipped = True
+        else:
+            save_id_mapping(ids, str(id_mapping_file), str(input_file), model_name, pooling_strategy)
+        
+        # 메타데이터 파일 저장 (parquet)
+        metadata_file = output_path / f"metadata_{version}_{model_safe_name}_{pooling_strategy}.parquet"
+        save_metadata_parquet(metadata_list, str(metadata_file), str(input_file), model_name, pooling_strategy)
         
         end_time = time.time()
         processing_time = end_time - start_time
@@ -255,20 +321,29 @@ def run_embedding_experiment(input_file, output_dir, model_name, batch_size=32, 
             "model_name": model_name,
             "output_file": str(embedding_output_file),
             "id_mapping_file": str(id_mapping_file),
+            "metadata_file": str(metadata_file),
             "shape": embeddings.shape,
             "model_info": model_info,
             "pooling_strategy": pooling_strategy,
             "valid_texts": len(valid_texts),
             "total_ids": len(ids),
+            "total_metadata": len(metadata_list),
             "processing_time_seconds": processing_time,
             "batch_size": batch_size,
             "device": device,
-            "limit": limit
+            "limit": limit,
+            "embedding_skipped": embedding_skipped,
+            "id_mapping_skipped": id_mapping_skipped
         }
         
         print(f"✅ 실험 완료: {model_name} - {result['shape']}")
         print(f"🔧 Pooling 전략: {pooling_strategy}")
         print(f"📄 ID 매핑: {len(ids)}개")
+        print(f"📊 메타데이터: {len(metadata_list)}개")
+        if embedding_skipped:
+            print(f"⏭️  임베딩: 기존 파일 사용 (건너뛰기)")
+        if id_mapping_skipped:
+            print(f"⏭️  ID 매핑: 기존 파일 사용 (건너뛰기)")
         print(f"⏱️  처리 시간: {processing_time:.2f}초")
         
         return result
@@ -289,12 +364,12 @@ def main():
     print("=" * 60)
     
     # 설정
-    input_dir = "TorchDocs/data/preprocessed/"
-    output_dir = "TorchDocs/data/embeddings_output"
-    model_name = "BAAI/bge-large-en"
+    input_dir = "TorchDocs/data/processed/"
+    output_dir = "TorchDocs/embeddings"
+    model_name = "intfloat/e5-large-v2" ## 임베딩 모델 설정
     batch_size = 16
-    device = "cpu"  ## GPU 사용 시 "cuda"로 변경
-    limit = 10     ## 테스트용으로 10개만 처리, 전체 처리 시 0으로 설정
+    device = "cuda"  ## GPU 사용 시 "cuda"로 변경
+    limit = 0     ## 테스트용으로 10개만 처리, 전체 처리 시 0으로 설정
     pooling_strategy = None  # None: 자동 선택 ("mean", "cls", "max" 선택도 가능)
     
     # 모델별 출력 디렉토리 생성
@@ -382,7 +457,9 @@ def main():
             for result in successful_results:
                 print(f"   임베딩: {Path(result['output_file']).name}")
                 print(f"   ID 매핑: {Path(result['id_mapping_file']).name}")
+                print(f"   메타데이터: {Path(result['metadata_file']).name}")
                 print(f"   ID 개수: {result['total_ids']}개")
+                print(f"   메타데이터 개수: {result['total_metadata']}개")
     
     print("\n🎉 모든 작업이 완료되었습니다!")
 
