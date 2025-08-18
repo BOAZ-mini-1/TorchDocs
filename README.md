@@ -1,6 +1,6 @@
 # TorchDocs
 - Directory architecture (draft)
-- raw 폴더는 용량이 커서 충돌이 일어나므로 업로드 하지 않았음 (.gitignore 참고)
+- raw, embeddings 폴더는 용량이 커서 충돌이 일어나므로 업로드 하지 않았음 (.gitignore 참고)
 
 ```
 TorchDocs/
@@ -20,14 +20,19 @@ TorchDocs/
 ├─ qa_chunks.py             # .jsonl 파일 품질 검사 스크립트
 ├─ token_analyzer.py        # 토큰 수 초과 검사
 ├─ script_guide.txt         # CLI 입력 가이드
-│
-│ # ==== 여기까지 현재 구현 완료(8/17) ====
-│
+├─ make_embeddings.py       # embeddings 생성
 ├── embeddings/
-│   ├── e5-large-v2/              # 임베딩 모델별 디렉토리
-│   │   ├── passages.npy          # 문서 임베딩 (float32, L2 norm 전)
-│   │   ├── ids.npy               # 레코드 인덱스→id 매핑
-│   │   └── meta.parquet          # id, title, url, etc.
+│   ├── intfloat_e5_large_v2/                      # 임베딩 모델별 디렉토리
+│   │   ├── embeddings_2.4_e5_large_v2_mean.npy    # 문서 임베딩
+│   │   ├── ...
+│   │   ├── id_2.4_e5_large_v2_mean.json           # id
+│   │   ├── ...
+│   │   ├── metadata_2.4_e5_large_v2_mean.parquet  # 메타데이터(title, url, etc.)
+│   │   └── ...
+│   ├── BAAI_bge_base_en/
+|   └─ ...
+│
+│ # ==== 여기까지 현재 완료(8/18) ====
 ├── index/
 │   └── e5-large-v2/
 │       ├── faiss.index           # FAISS 인덱스(FlatIP/HNSW/IVF 등)
