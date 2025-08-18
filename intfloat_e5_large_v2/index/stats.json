@@ -1,0 +1,56 @@
+{
+  "model": "intfloat/e5-large-v2",
+  "pooling": "mean",
+  "metric": "cosine (IP on L2-normalized vectors)",
+  "dimension": 1024,
+  "total_rows": 38730,
+  "datasets": {
+    "2.4_chunks_e5": {
+      "rows": 7902,
+      "dim": 1024
+    },
+    "2.5_chunks_e5": {
+      "rows": 8122,
+      "dim": 1024
+    },
+    "2.6_chunks_e5": {
+      "rows": 8093,
+      "dim": 1024
+    },
+    "2.7_chunks_e5": {
+      "rows": 8203,
+      "dim": 1024
+    },
+    "2.8_chunks_e5": {
+      "rows": 6410,
+      "dim": 1024
+    }
+  },
+  "version_ranges": [
+    {
+      "version": "2.4_chunks_e5",
+      "start": 0,
+      "end": 7901
+    },
+    {
+      "version": "2.5_chunks_e5",
+      "start": 7902,
+      "end": 16023
+    },
+    {
+      "version": "2.6_chunks_e5",
+      "start": 16024,
+      "end": 24116
+    },
+    {
+      "version": "2.7_chunks_e5",
+      "start": 24117,
+      "end": 32319
+    },
+    {
+      "version": "2.8_chunks_e5",
+      "start": 32320,
+      "end": 38729
+    }
+  ]
+}
