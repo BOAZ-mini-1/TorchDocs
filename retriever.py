@@ -46,32 +46,78 @@ except Exception as e:
 embeddings = HuggingFaceEmbeddings(model_name="intfloat/e5-large-v2")
 
 # Search
-def fetch_candidates(query_vector: np.ndarray, fetch_k: int):
+def fetch_candidates(query_vector: np.ndarray, fetch_k: int, **kwargs):
     """
-    Step 1: Fetch a larger pool of candidate documents using raw similarity search.
-    This is a modified version of your original search function.
+    Fetches at least `fetch_k` candidates that match the filter criteria.
+    It repeatedly queries the index with a larger k until enough matches are found.
     """
-    distances, indices = index.search(np.array([query_vector], dtype=np.float32), fetch_k)
+    version_filter = kwargs.get("version")
 
-    candidates = []
-    for i in range(fetch_k):
-        vector_index = indices[0][i]
-        if vector_index < 0: # FAISS returns -1 for out of bounds
-            continue
-        if vector_index < len(actual_ids_list):
+    # If no filter is applied, we can use the simple, original logic.
+    if not version_filter:
+        distances, indices = index.search(np.array([query_vector], dtype=np.float32), fetch_k)
+        candidates = []
+        for i in range(len(indices[0])):
+            vector_index = indices[0][i]
+            if vector_index < 0: continue
             doc_id = actual_ids_list[vector_index]
-            distance = distances[0][i]
-            doc_info = doc_store.get(doc_id)
-            # We also need the vector for MMR calculations
-            doc_vector = index.reconstruct(int(vector_index))
             candidates.append({
-                "distance": distance,
-                "doc_info": doc_info,
-                "vector_index": vector_index, # Keep track of the original index in FAISS
-                "vector": doc_vector
+                "distance": distances[0][i],
+                "doc_info": doc_store.get(doc_id),
+                "vector_index": vector_index,
+                "vector": index.reconstruct(int(vector_index))
             })
-        else:
-            print(f"{vector_index} doenst exist")
+        return candidates
+
+    # --- Logic for when a filter IS applied ---
+    candidates = []
+    # Start by searching for more documents than we need
+    k_to_search = fetch_k * 2
+    processed_indices = set()
+
+    # Loop until we have enough candidates or have searched the entire index
+    while len(candidates) < fetch_k:
+        # Safety break: stop if we are asking for more documents than exist in the index
+        if k_to_search > index.ntotal:
+            k_to_search = index.ntotal
+
+        distances, indices = index.search(np.array([query_vector], dtype=np.float32), k_to_search)
+
+        initial_candidate_count = len(candidates)
+
+        for i in range(len(indices[0])):
+            vector_index = int(indices[0][i])
+
+            if vector_index < 0 or vector_index in processed_indices:
+                continue
+
+            processed_indices.add(vector_index)
+            doc_id = actual_ids_list[vector_index]
+            doc_info = doc_store.get(doc_id)
+
+            # Apply the version filter
+            if doc_info and doc_info.get('metadata', {}).get('version') == version_filter:
+                candidates.append({
+                    "distance": distances[0][i],
+                    "doc_info": doc_info,
+                    "vector_index": vector_index,
+                    "vector": index.reconstruct(vector_index)
+                })
+
+                # If we have collected enough matching documents, we can stop.
+                if len(candidates) == fetch_k:
+                    break
+
+        # If we have searched the entire index or a full search pass found no new candidates, break the loop.
+        if k_to_search == index.ntotal or len(candidates) == initial_candidate_count:
+            if len(candidates) < fetch_k:
+                print(
+                    f"Warning: Searched all {index.ntotal} documents but only found {len(candidates)} that match the filter.")
+            break
+
+        # If we still need more, double the search size for the next iteration
+        k_to_search = min(k_to_search * 2, index.ntotal)
+
     return candidates
 
 
@@ -82,7 +128,7 @@ def search_with_mmr(query: str, k: int = 5, fetch_k: int = 20, lambda_mult: floa
     # Embed the query first
     query_vector = embeddings.embed_query(query)
 
-    candidates = fetch_candidates(query_vector, fetch_k)
+    candidates = fetch_candidates(query_vector, fetch_k, version="2.8")
     if not candidates:
         return []
 
@@ -133,7 +179,7 @@ def search_with_mmr(query: str, k: int = 5, fetch_k: int = 20, lambda_mult: floa
 
 # Main
 test_query = "how to tell if an object’s code is from a torch.package?"
-search_results = search_with_mmr(test_query, k=3, fetch_k=10, lambda_mult=0.5)
+search_results = search_with_mmr(test_query, k=10, fetch_k=20, lambda_mult=0.5)
 
 print(f"Q: {test_query}\n")
 print("Result")
