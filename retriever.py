@@ -45,6 +45,7 @@ except Exception as e:
 
 embeddings = HuggingFaceEmbeddings(model_name="intfloat/e5-large-v2")
 
+
 # Search
 def fetch_candidates(query_vector: np.ndarray, fetch_k: int, **kwargs):
     """
@@ -121,14 +122,22 @@ def fetch_candidates(query_vector: np.ndarray, fetch_k: int, **kwargs):
     return candidates
 
 
-def search_with_mmr(query: str, k: int = 5, fetch_k: int = 20, lambda_mult: float = 0.5):
+def search_with_mmr(query: str, k: int = 5, fetch_k: int = 20, lambda_mult: float = 0.5, version: str = None):
     """
     Retrieves documents using a two-step MMR approach.
+
+    Args:
+        query (str): The search query.
+        k (int): The final number of documents to return.
+        fetch_k (int): The number of initial candidates to fetch.
+        lambda_mult (float): The lambda parameter for MMR (0=max diversity, 1=max relevance).
+        version (str, optional): The version to filter documents by. Defaults to None.
     """
     # Embed the query first
     query_vector = embeddings.embed_query(query)
 
-    candidates = fetch_candidates(query_vector, fetch_k, version="2.8")
+    # Pass the version parameter to fetch_candidates
+    candidates = fetch_candidates(query_vector, fetch_k, version=version)
     if not candidates:
         return []
 
@@ -179,10 +188,18 @@ def search_with_mmr(query: str, k: int = 5, fetch_k: int = 20, lambda_mult: floa
 
 # Main
 test_query = "how to tell if an object’s code is from a torch.package?"
-search_results = search_with_mmr(test_query, k=10, fetch_k=20, lambda_mult=0.5)
+
+# Now you can pass the version directly into the search function
+search_results = search_with_mmr(
+    test_query,
+    k=10,
+    fetch_k=20,
+    lambda_mult=0.5,
+    version="2.8"
+)
 
 print(f"Q: {test_query}\n")
-print("Result")
+print(f"Results filtered for version: 2.8")
 # 검색된 각 문서의 모든 정보를 JSON 형식으로 예쁘게 출력
 for i, result in enumerate(search_results, 1):
     print(f"=============== 문서 {i} ================")
