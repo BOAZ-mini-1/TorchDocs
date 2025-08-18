@@ -4,6 +4,7 @@ import glob
 import numpy as np
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import CrossEncoder
 
 base_path = "intfloat_e5_large_v2"
 index_path = f"{base_path}/index/faiss.index"
@@ -186,23 +187,45 @@ def search_with_mmr(query: str, k: int = 5, fetch_k: int = 20, lambda_mult: floa
     return [{"distance": res["distance"], "doc_info": res["doc_info"]} for res in final_results]
 
 
-# Main
-test_query = "how to tell if an object’s code is from a torch.package?"
+# ReRanking
+def rerank_with_cross_encoder(query: str, search_results: list, top_n: int = 5):
+    reranker_model = CrossEncoder('BAAI/bge-reranker-large')
 
-# Now you can pass the version directly into the search function
-search_results = search_with_mmr(
+    pairs = []
+    for result in search_results:
+        if result.get('doc_info') and result['doc_info'].get('content'):
+            pairs.append([query, result['doc_info']['content']])
+        else:
+            pairs.append([query, ""])
+
+    scores = reranker_model.predict(pairs)
+
+    for i in range(len(search_results)):
+        search_results[i]['rerank_score'] = scores[i]
+
+    reranked_results = sorted(search_results, key=lambda x: x['rerank_score'], reverse=True)
+
+    return reranked_results[:top_n]
+
+
+test_query = ("how autograd is computed inside pytorch?")
+
+initial_candidates = search_with_mmr(
     test_query,
-    k=10,
-    fetch_k=20,
+    k=20,  # MMR로 20개 선택
+    fetch_k=50,  # Faiss에서 최초 50개 조회
     lambda_mult=0.5,
-    version="2.8"
+    # version="2.8"
 )
 
 print(f"Q: {test_query}\n")
-print(f"Results filtered for version: 2.8")
+
+final_results = rerank_with_cross_encoder(test_query, initial_candidates, top_n=5)
+
 # 검색된 각 문서의 모든 정보를 JSON 형식으로 예쁘게 출력
-for i, result in enumerate(search_results, 1):
+for i, result in enumerate(final_results, 1):
     print(f"=============== 문서 {i} ================")
-    print(f"유사도 거리 (Distance): {result['distance']:.4f}\n")
+    print(f"L2 거리 (Distance): {result['distance']:.4f}")
+    print(f"관련성 점수 (Rerank Score): {result['rerank_score']:.4f}\n") # 리랭크 점수 출력
     print(json.dumps(result['doc_info'], indent=4, ensure_ascii=False))
-    print("=" * 35 + "\n")
+    print("=" * 40 + "\n")
