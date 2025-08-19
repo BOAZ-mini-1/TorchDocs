@@ -78,8 +78,10 @@ TorchDocs/
 │   │   └── ...
 │   ├── BAAI_bge_base_en/
 |   └─ ...
+├── generator/
+│   └── generator.py
 │
-│ # ==== 여기까지 현재 완료(8/18) ====
+│ # ==== 여기까지 현재 완료(8/??) ====
 ├── index/
 │   └── e5-large-v2/
 │       ├── faiss.index           # FAISS 인덱스(FlatIP/HNSW/IVF 등)
@@ -91,9 +93,6 @@ TorchDocs/
 │   ├── mmr.py                    # 다양성 제어
 │   ├── rerank.py                 # cross-encoder / bge-reranker
 │   └── pipeline.py               # retrieve(query) → candidates 정식 API
-├── generator/
-│   ├── prompt_templates/         # 시스템/컨텍스트 프롬프트
-│   └── generate.py               # candidates + question → answer
 ├── evaluation/
 │   ├── build_synth_dataset.py    # ragas 합성 평가셋 생성
 │   ├── run_ragas.py              # ragas 실행 스크립트
