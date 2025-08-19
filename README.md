@@ -2,6 +2,53 @@
 - Directory architecture (draft)
 - raw, embeddings 폴더는 용량이 커서 충돌이 일어나므로 업로드 하지 않았음 (.gitignore 참고)
 
+## Current File Structure
+```
+.
+├── README.md
+├── data
+│   └── processed
+│       ├── token_analysis.txt
+│       ├── torchdocs_2.4_chunks_e5.jsonl
+│       ├── torchdocs_2.5_chunks_e5.jsonl
+│       ├── torchdocs_2.6_chunks_e5.jsonl
+│       ├── torchdocs_2.7_chunks_e5.jsonl
+│       └── torchdocs_2.8_chunks_e5.jsonl
+├── doc
+│   └── offical_tut.ipynb
+├── intfloat_e5_large_v2
+│   ├── embeddings
+│   │   ├── embeddings_torchdocs_2.4_chunks_e5_intfloat_e5_large_v2_mean.npy
+│   │   ├── embeddings_torchdocs_2.5_chunks_e5_intfloat_e5_large_v2_mean.npy
+│   │   ├── embeddings_torchdocs_2.6_chunks_e5_intfloat_e5_large_v2_mean.npy
+│   │   ├── embeddings_torchdocs_2.7_chunks_e5_intfloat_e5_large_v2_mean.npy
+│   │   ├── embeddings_torchdocs_2.8_chunks_e5_intfloat_e5_large_v2_mean.npy
+│   │   ├── id_mapping_torchdocs_2.4_chunks_e5_intfloat_e5_large_v2_mean.json
+│   │   ├── id_mapping_torchdocs_2.5_chunks_e5_intfloat_e5_large_v2_mean.json
+│   │   ├── id_mapping_torchdocs_2.6_chunks_e5_intfloat_e5_large_v2_mean.json
+│   │   ├── id_mapping_torchdocs_2.7_chunks_e5_intfloat_e5_large_v2_mean.json
+│   │   └── id_mapping_torchdocs_2.8_chunks_e5_intfloat_e5_large_v2_mean.json
+│   └── index
+│       ├── faiss.index
+│       ├── faiss.index.zip
+│       ├── global_ids.json
+│       └── stats.json
+├── make_embeddings.py
+├── preprocessing.py
+├── qa_chunks.py
+├── retriever.py
+├── script_guide.txt
+├── scripts
+│   ├── 00_make_eval_pool.py
+│   ├── 01_generate_qas.py
+│   ├── 02_run_retreiver.py
+│   ├── 03_run_generator.py
+│   ├── 04_build_ragas_dataset.py
+│   └── 05_run_ragas.py
+└── token_analyzer.py
+```
+
+
 ```
 TorchDocs/
 ├─ .gitignore/
