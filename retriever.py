@@ -208,19 +208,50 @@ def rerank_with_cross_encoder(query: str, search_results: list, top_n: int = 5):
     return reranked_results[:top_n]
 
 
+def search_and_rerank_pipeline(
+    query: str,
+    fetch_k: int = 50,
+    mmr_k: int = 20,
+    top_n: int = 5,
+    lambda_mult: float = 0.5,
+    version: str = None
+):
+    """
+    Performs a full search and rerank pipeline.
+
+    Args:
+        query (str): The search query from the user.
+        fetch_k (int): The number of initial candidates to fetch from FAISS.
+        mmr_k (int): The number of candidates to select using MMR.
+        top_n (int): The final number of documents to return after reranking.
+        lambda_mult (float): The lambda parameter for MMR (0=max diversity, 1=max relevance).
+        version (str, optional): The version to filter documents by. Defaults to None.
+
+    Returns:
+        list: A list of the top N reranked documents.
+    """
+    # Step 1: Retrieve initial candidates using MMR
+    initial_candidates = search_with_mmr(
+        query=query,
+        k=mmr_k,
+        fetch_k=fetch_k,
+        lambda_mult=lambda_mult,
+        version=version
+    )
+
+    # Step 2: Rerank the candidates to get the final results
+    final_results = rerank_with_cross_encoder(
+        query=query,
+        search_results=initial_candidates,
+        top_n=top_n
+    )
+
+    return final_results
+
+
 test_query = ("how autograd is computed inside pytorch?")
 
-initial_candidates = search_with_mmr(
-    test_query,
-    k=20,  # MMR로 20개 선택
-    fetch_k=50,  # Faiss에서 최초 50개 조회
-    lambda_mult=0.5,
-    # version="2.8"
-)
-
-print(f"Q: {test_query}\n")
-
-final_results = rerank_with_cross_encoder(test_query, initial_candidates, top_n=5)
+final_results = search_and_rerank_pipeline(test_query)
 
 # 검색된 각 문서의 모든 정보를 JSON 형식으로 예쁘게 출력
 for i, result in enumerate(final_results, 1):
