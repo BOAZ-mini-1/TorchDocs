@@ -2,15 +2,27 @@
 - Directory architecture (draft)
 - raw, embeddings 폴더는 용량이 커서 충돌이 일어나므로 업로드 하지 않았음 (.gitignore 참고)
 
+### Location Notices
+- 인덱스: intfloat_e5_large_v2/index/faiss.index (필수 배치)
+- id 매핑: intfloat_e5_large_v2/embeddings/id_mapping_*.json
+- retriever 출력: data/eval/02_contexts.jsonl
+- generator 출력: data/eval/03_answers.jsonl
+- ragas 묶음: data/eval/ragas_synth.jsonl
+
+
 ## Current File Structure
 ```
 TorchDocs/
 │
 ├── data/
 │   └── processed/
-│       ├── token_analysis.txt # 각 json 파일이 512 토큰을 넘는지 검사한 결과 로그
-│       ├── torchdocs_2.8_chunks_e5.jsonl
-│       └── ...
+│   │   ├── token_analysis.txt # 각 json 파일이 512 토큰을 넘는지 검사한 결과 로그
+│   │   ├── torchdocs_2.8_chunks_e5.jsonl
+│   │   └── ...
+│   └── eval/
+│       ├── 02_contexts.jsonl  # retriever output
+│       ├── 03_answers.jsonl   # generator output
+│       └── ragas_synth.jsonl  # ragas 
 │   
 ├── intfloat_e5_large_v2/
 │   ├── embeddings/
@@ -28,7 +40,7 @@ TorchDocs/
 ├── preprocessing.py         # HTML 원본 전처리 스크립트
 ├── qa_chunks.py             # .jsonl 파일 품질 검사 스크립트
 ├── token_analyzer.py        # 토큰 수 초과 검사
-├── script_guide.txt         # CLI 입력 가이드
+├── script_guide.md          # 각 .py 파일들에 대한 CLI 입력 및 데모 가이드
 ├── make_embeddings.py       # embeddings 생성
 ├── retriever.py
 │
