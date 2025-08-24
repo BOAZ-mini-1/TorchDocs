@@ -4,15 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b88f3ec3-0ec8-4328-ac77-d7fe6a974d46" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/data/processed/asfd.jsonl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/processed/torchdocs_2.4_chunks_e5.jsonl" beforeDir="false" afterPath="$PROJECT_DIR$/data/processed/torchdocs_2.4_chunks_e5.jsonl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/processed/torchdocs_2.5_chunks_e5.jsonl" beforeDir="false" afterPath="$PROJECT_DIR$/data/processed/torchdocs_2.5_chunks_e5.jsonl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/processed/torchdocs_2.6_chunks_e5.jsonl" beforeDir="false" afterPath="$PROJECT_DIR$/data/processed/torchdocs_2.6_chunks_e5.jsonl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/processed/torchdocs_2.7_chunks_e5.jsonl" beforeDir="false" afterPath="$PROJECT_DIR$/data/processed/torchdocs_2.7_chunks_e5.jsonl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/processed/torchdocs_2.8_chunks_e5.jsonl" beforeDir="false" afterPath="$PROJECT_DIR$/data/processed/torchdocs_2.8_chunks_e5.jsonl" afterDir="false" />
-    </list>
+    <list default="true" id="b88f3ec3-0ec8-4328-ac77-d7fe6a974d46" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -149,7 +141,7 @@
       <workItem from="1755619250432" duration="6571000" />
       <workItem from="1755768690979" duration="45000" />
       <workItem from="1755775702450" duration="8470000" />
-      <workItem from="1756021834696" duration="580000" />
+      <workItem from="1756021834696" duration="1218000" />
     </task>
     <servers />
   </component>
