@@ -10,7 +10,7 @@ base_path = "../intfloat_e5_large_v2"
 index_path = f"{base_path}/index/faiss.index"
 global_ids_path = f"{base_path}/index/global_ids.json"
 
-original_content_paths = glob.glob("data/processed/*.jsonl")
+original_content_paths = glob.glob("../data/processed/*.jsonl")
 
 try:
     index = faiss.read_index(index_path)
