@@ -1,98 +1,122 @@
 # 1. chunk → 질문/정답 자동 생성
-
-# 생성 기준: "해당 chunk만 읽으면 답할 수 있는, 단일‑스팬 또는 짧은 서술형 문제"
-# 한 청크당 1-2문항 권장(중복 개념/표현 피하기)
-# ground_truth는 chunk에서 직접 근거가 나오도록 (추상화/의견 금지)
-
-# 프롬프트 핵심 규칙
-# 질문은 명확/구체적(모호한 "설명하라" 금지)
-# 정답은 짧고 사실적(1-3문장)
-# 반드시 해당 chunk에서 답을 찾을 수 있어야 함
-
-# Usage example (LLM not wired yet; fallback will create simple QAs):
-#   python 01_generate_qas.py --n-per-chunk 2 --fallback
-
-if __name__ == "__main__" and False:
-    ...
-
-import argparse, json, re, uuid
+# Usage:
+#   python scripts/01_generate_qas.py --in data/eval/00_pool.jsonl --n-per-chunk 2 --out data/eval/01_qas.jsonl
+#   (옵션) --llm Qwen/Qwen2.5-3B-Instruct  → LLM 생성 / 생략 시 규칙기반 fallback
+import argparse, json, re, random
 from pathlib import Path
+from typing import List, Dict, Any, Optional
 
+def iter_jsonl(path):
+    with open(path, encoding="utf-8") as f:
+        for l in f:
+            l = l.strip()
+            if not l: continue
+            yield json.loads(l)
 
-def _first_sentences(text: str, max_sents: int = 2) -> str:
-    """Return up to N short sentences as a naive ground_truth fallback."""
-    sents = re.split(r"(?<=[.!?])\s+", text.strip())
-    sents = [s.strip() for s in sents if s.strip()]
-    return " ".join(sents[:max_sents])[:600]
+def sent_split(txt: str) -> List[str]:
+    # 단순 분할
+    parts = re.split(r'(?<=[.!?])\s+', txt.strip())
+    return [p for p in parts if p]
 
+def fallback_qas_one(chunk: Dict[str, Any], n: int = 2) -> List[Dict[str, Any]]:
+    """llm 오류 시 rule-based fallback 구현 - 타이틀/첫문장을 근거로 간단 Q/A 생성"""
+    title = chunk.get("title") or ""
+    ctx = chunk.get("content") or ""
+    sents = sent_split(ctx)
+    s0 = sents[0] if sents else ctx[:200]
 
-def llm_generate_qas_english(text: str, n: int = 2):
-    """TODO: plug LLM call here
+    cands = []
+    if title:
+        cands.append(("What is {}?".format(title.strip().rstrip("#").strip()),
+                      f"{title} is described as follows: {s0}"))
+    if "autograd" in ctx.lower():
+        cands.append(("How does autograd work?",
+                      "Autograd builds a computation graph and computes gradients via reverse-mode autodiff. " + s0))
+    if "tensor" in ctx.lower():
+        cands.append(("What is a Tensor in PyTorch?",
+                      "A Tensor is a multi-dimensional array with automatic differentiation support. " + s0))
 
-    The prompt should instruct:
-      - Ask specific, answerable questions using ONLY this chunk.
-      - Produce short factual answers (1-3 sentences), no opinions.
-      - English only.
+    # 채워 넣기
+    if not cands:
+        cands.append((
+            "Summarize the main idea of this section.",
+            s0
+        ))
 
-    Return structure: List[{"question": str, "ground_truth": str}]
-    """
-    raise NotImplementedError("Connect your LLM (e.g., Qwen/Llama) to generate English QAs.")
-
-
-def fallback_generate_qas(text: str, n: int = 1):
-    # Very conservative: one generic question + extractive ground_truth.
-    title = None
-    m = re.search(r"^\s*([A-Za-z0-9 _#:\-]{3,})\s*$", text.splitlines()[0])
-    if m:
-        title = m.group(1).strip("# ")
-    q = f"What is the main point of this passage{f' about {title}' if title else ''}?"
-    gt = _first_sentences(text, max_sents=2)
-    return [{"question": q, "ground_truth": gt}]
-
-
-def script_01_generate_qas(
-    n_per_chunk: int = 2,
-    fallback: bool = False,
-):
-    repo = Path(__file__).resolve().parents[0]
-    pool_path = repo / "data" / "eval" / "00_eval_pool.jsonl"
-    out_path = repo / "data" / "eval" / "01_qas_seed.jsonl"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
+    random.shuffle(cands)
     out = []
-    with pool_path.open("r", encoding="utf-8") as f:
-        for line in f:
-            item = json.loads(line)
-            text = item.get("text", "")
-            if fallback:
-                qas = fallback_generate_qas(text, n=1)
-            else:
-                qas = llm_generate_qas_english(text, n_per_chunk)
-            for qa in qas:
-                out.append({
-                    "qid": f"q_{uuid.uuid4().hex[:8]}",
-                    "chunk_id": item.get("id"),
-                    "question": qa["question"],
-                    "ground_truth": qa["ground_truth"],
+    for q, a in cands[:n]:
+        out.append({
+            "question": q.strip(),
+            "ground_truth": a.strip(),
+            "version": chunk.get("version"),
+            "source_id": chunk.get("id"),
+            "source_title": chunk.get("title"),
+            "source_url": chunk.get("url"),
+        })
+    return out
+
+# ------- LLM 생성기 --------
+def llm_generate_qas_english(chunks: List[Dict[str, Any]], model_name: Optional[str], per_chunk: int) -> List[Dict[str, Any]]:
+    # 모델이 제공되면 간단 템플릿으로 Q/A 생성. (없으면 fallback)
+    if not model_name:
+        res = []
+        for c in chunks:
+            res.extend(fallback_qas_one(c, n=per_chunk))
+        return res
+
+    # transformers pipeline 로딩 (가벼운 모델)
+    from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+    tok = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    mdl = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True, torch_dtype="auto")\
+          .to("cuda" if __import__("torch").cuda.is_available() else "cpu")
+    gen = pipeline("text-generation", model=mdl, tokenizer=tok, max_new_tokens=256)
+
+    prompt_tpl = (
+        "You are a question generation bot. Given the context below, write {k} helpful Q/A pairs in English.\n"
+        "Return as JSON lines with keys: question, answer.\n\n[CONTEXT]\n{ctx}\n"
+    )
+
+    res = []
+    for c in chunks:
+        ctx = (c.get("content") or "")[:1200]
+        prompt = prompt_tpl.format(k=per_chunk, ctx=ctx)
+        out = gen(prompt)[0]["generated_text"]
+        # 매우 보수적으로 파싱: { "question": ..., "answer": ... } 라인이 보이면 캡쳐
+        matches = re.findall(r'{"question"\s*:\s*"(.*?)"\s*,\s*"answer"\s*:\s*"(.*?)"}', out)
+        if matches:
+            for q, a in matches[:per_chunk]:
+                res.append({
+                    "question": q.strip(),
+                    "ground_truth": a.strip(),
+                    "version": c.get("version"),
+                    "source_id": c.get("id"),
+                    "source_title": c.get("title"),
+                    "source_url": c.get("url"),
                 })
+        else:
+            # 파싱 실패 시 fallback
+            res.extend(fallback_qas_one(c, n=per_chunk))
+    return res
 
-    with out_path.open("w", encoding="utf-8") as f:
-        for r in out:
-            # light rule checks
-            if not r["question"] or not r["ground_truth"]:
-                continue
-            if len(r["ground_truth"]) > 1000:
-                continue
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--in", dest="inp", type=str, default="data/eval/00_pool.jsonl")
+    ap.add_argument("--out", type=str, default="data/eval/01_qas.jsonl")
+    ap.add_argument("--n-per-chunk", type=int, default=2)
+    ap.add_argument("--llm", type=str, default=None)  # Qwen/Qwen2.5-3B-Instruct
+    ap.add_argument("--seed", type=int, default=42)
+    args = ap.parse_args()
+    random.seed(args.seed)
 
-    print(f"[01] wrote {len(out)} items -> {out_path}")
+    chunks = list(iter_jsonl(args.inp))
+    qas = llm_generate_qas_english(chunks, args.llm, args.n_per_chunk)
 
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+    with open(args.out, "w", encoding="utf-8") as w:
+        for row in qas:
+            w.write(json.dumps(row, ensure_ascii=False) + "\n")
+    print(f"[qas] wrote {args.out} (n={len(qas)})")
 
 if __name__ == "__main__":
-    import sys
-    if Path(sys.argv[0]).name == "01_generate_qas.py":
-        p = argparse.ArgumentParser()
-        p.add_argument("--n-per-chunk", type=int, default=2)
-        p.add_argument("--fallback", action="store_true")
-        args = p.parse_args()
-        script_01_generate_qas(**vars(args))
+    main()

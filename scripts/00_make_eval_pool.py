@@ -1,100 +1,65 @@
 # 0. 평가 pool 만들기
-# Usage example:
-#   python 00_make_eval_pool.py \
-#     --version 2.8 \
-#     --pool-size 300 \
-#     --min-chars 200 --max-chars 1200 \
-#     --per-doc-max 5
-
-if __name__ == "__main__" and False:
-    ...
-
-import argparse
-import json
-import random
+# Usage:
+#   python scripts/00_make_eval_pool.py --version 2.8 --pool-size 300 --out data/eval/00_pool.jsonl
+import argparse, json, random
 from pathlib import Path
-from collections import defaultdict
 
+def pick_jsonl_for_version(ver: str):
+    cand = [
+        f"data/processed/torchdocs_{ver}_chunks_e5.jsonl",
+    ]
+    for p in cand:
+        if Path(p).exists():
+            return p
+    raise FileNotFoundError(f"No jsonl for version {ver}: {cand}")
 
-def _guess_doc_key(meta: dict) -> str:
-    """Build a per-document key for stratified sampling.
-    Prefer path; fallback to title; fallback to url.
-    """
-    if not meta:
-        return "unknown_doc"
-    for k in ["path", "title", "url"]:
-        v = meta.get(k)
-        if v:
-            return f"{meta.get('version','')}//{v}"
-    return f"{meta.get('version','')}//unknown_doc"
-
-
-def script_00_make_eval_pool(
-    version: str = "2.8",
-    pool_size: int = 300,
-    min_chars: int = 200,
-    max_chars: int = 1200,
-    per_doc_max: int = 5,
-    lang: str = "en",
-    seed: int = 2025,
-):
-    random.seed(seed)
-    root = Path(__file__).resolve().parents[0]
-    repo = root  # this file is expected to live in TorchDocs/ by default
-    processed = repo / "data" / "processed" / f"torchdocs_{version}_chunks_e5.jsonl"
-    out_path = repo / "data" / "eval" / "00_eval_pool.jsonl"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Load chunks
-    chunks = []
-    with processed.open("r", encoding="utf-8") as f:
+def iter_jsonl(path):
+    with open(path, encoding="utf-8") as f:
         for line in f:
-            obj = json.loads(line)
-            t = obj.get("text_for_embedding") or obj.get("content") or ""
-            meta = obj.get("metadata", {})
-            # Filter by lang if present
-            if lang and meta.get("lang") and meta.get("lang") != lang:
-                continue
-            if len(t) < min_chars or len(t) > max_chars:
-                continue
-            chunks.append({
-                "id": obj.get("id"),
-                "text": t,
-                "metadata": meta,
-            })
+            line = line.strip()
+            if not line: continue
+            yield json.loads(line)
 
-    # Bucket by document key
-    by_doc = defaultdict(list)
-    for c in chunks:
-        key = _guess_doc_key(c.get("metadata", {}))
-        by_doc[key].append(c)
+def is_reasonable_chunk(o):
+    txt = (o.get("text_for_embedding") or o.get("content") or "").strip()
+    if len(txt) < 200:           # 너무 짧으면 제외
+        return False
+    if txt.count("\n") > 200:    # 지나치게 긴 나열 페이지 제외
+        return False
+    return True
 
-    # Cap per-doc & shuffle
-    pool = []
-    for key, arr in by_doc.items():
-        random.shuffle(arr)
-        pool.extend(arr[:per_doc_max])
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--version", type=str, default="2.8")
+    ap.add_argument("--pool-size", type=int, default=300)
+    ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--out", type=str, default="data/eval/00_pool.jsonl")
+    args = ap.parse_args()
 
-    random.shuffle(pool)
-    pool = pool[:pool_size]
+    random.seed(args.seed)
+    src = pick_jsonl_for_version(args.version)
 
-    with out_path.open("w", encoding="utf-8") as f:
-        for c in pool:
-            f.write(json.dumps(c, ensure_ascii=False) + "\n")
+    rows = [o for o in iter_jsonl(src) if is_reasonable_chunk(o)]
+    if len(rows) == 0:
+        raise SystemExit("No eligible chunks")
 
-    print(f"[00] wrote {len(pool)} items -> {out_path}")
+    # 랜덤 샘플링
+    sample = random.sample(rows, k=min(args.pool_size, len(rows)))
 
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+    with open(args.out, "w", encoding="utf-8") as w:
+        for o in sample:
+            md = o.get("metadata", {}) or {}
+            out = {
+                "id": o.get("id"),
+                "version": str(md.get("version") or args.version),
+                "title": md.get("title") or "",
+                "url": md.get("url") or "",
+                "content": o.get("text_for_embedding") or o.get("content") or "",
+            }
+            w.write(json.dumps(out, ensure_ascii=False) + "\n")
+
+    print(f"[pool] wrote {args.out} (n={len(sample)}) from {src}")
 
 if __name__ == "__main__":
-    import sys
-    if Path(sys.argv[0]).name == "00_make_eval_pool.py":
-        p = argparse.ArgumentParser()
-        p.add_argument("--version", default="2.8")
-        p.add_argument("--pool-size", type=int, default=300)
-        p.add_argument("--min-chars", type=int, default=200)
-        p.add_argument("--max-chars", type=int, default=1200)
-        p.add_argument("--per-doc-max", type=int, default=5)
-        p.add_argument("--lang", default="en")
-        p.add_argument("--seed", type=int, default=2025)
-        args = p.parse_args()
-        script_00_make_eval_pool(**vars(args))
+    main()
