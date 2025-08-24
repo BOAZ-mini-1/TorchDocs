@@ -7,4 +7,6 @@ temp = search_and_rerank_pipeline(test_query)
 
 print(temp)
 
-generate_from_rerank(test_query, temp)
+res = generate_from_rerank(test_query, temp)
+print(res["answer"])
+print(res["used_refs"])
