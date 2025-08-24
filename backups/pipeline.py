@@ -34,7 +34,10 @@ def run_query(query: str):
         used_refs = result.get("used_refs", [])
         if used_refs:
             for i, ref in enumerate(used_refs, 1):
-                print(f"  [{i}] {ref}")
+                if isinstance(ref, dict) and 'url' in ref:
+                    print(f"  [{i}] {ref['url']}")
+                else:
+                    print(f"  [{i}] {ref}")
         else:
             print("  No references were used.")
         print("=" * 60)
