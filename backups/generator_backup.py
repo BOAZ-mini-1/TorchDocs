@@ -83,15 +83,11 @@ USER_TEMPLATE = """# User Question
   2) **Explanation** — brief reasoning and when to use it, citing sources inline like [#1].
   3) **Example** — a minimal, runnable code snippet (if relevant).
   4) **Notes & Pitfalls** — edge cases, version differences (mention version numbers), and common mistakes.
-  5) **References** — `References used: [#1, #3, ...]`.
 - Only use information present in the reference documents. If evidence is insufficient, write: *"The provided references don't fully support X."* and stop.
 - When multiple versions appear, prefer the **newest version** but **name the version(s)** you used.
 - **If the user specifies a version, only use documents from that version. If no documents match, say so explicitly.**
 - Keep the final answer under ~250–300 words unless the user asked for more.
-- **Do not include raw URLs in the answer; cite as [#n] only.**
 
-# Reference Documents (use only what's needed)
-{ctx_block}
 """
 
 def _shorten(s: str, n: int) -> str:

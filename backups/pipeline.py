@@ -47,7 +47,7 @@ def main():
     """
     The main function to run the interactive CLI loop.
     """
-    print("🚀 Welcome to the Interactive RAG CLI!")
+    print("🚀 Welcome to the Pytorch CLI!")
     print("Type your query and press Enter. Type 'exit' or 'quit' to end.")
 
     while True:
