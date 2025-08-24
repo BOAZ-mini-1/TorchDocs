@@ -20,7 +20,29 @@ python preprocessing.py \
 python qa_chunks.py data/processed/torchdocs_2.8_chunks.jsonl
 ```
 
-# ================DEMO용 CLI (미완성 상태이니 just 예시.)================
+# 3. Retriever 데모 검사
+
+# 3-1. 단일 질문
+```bash
+python scripts/02_run_retriever.py --q "How does autograd compute gradients in PyTorch 2.8?" --top-k 5 --fetch-k 40 --out data/eval/02_contexts.jsonl
+head -n1 data/eval/02_contexts.jsonl | jq .
+```
+
+# 3-2. 버전 자동 파싱 확인 (v2.6로 입력했을 때 regex가 잘 먹는지?)
+```bash
+python scripts/02_run_retriever.py --q "In PyTorch v2.6, how to register a custom autograd Function?" --top-k 5 --out data/eval/02_contexts_v26.jsonl
+head -n1 data/eval/02_contexts_v26.jsonl | jq .
+```
+
+# 3-3. (optional) CrossEncoder 리랭킹
+```bash
+python scripts/02_run_retriever.py --q "torch.compile limitations in 2.8" --use-cross --top-k 5 --out data/eval/02_contexts_ce.jsonl
+```
+
+
+
+
+# ===========DEMO용 CLI (미완성 상태이니 just 예시.)===========
 
 ```bash
 # 0) (데모 머신에) 인덱스 배치
