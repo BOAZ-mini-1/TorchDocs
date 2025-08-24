@@ -8,7 +8,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import CrossEncoder
 
-def find_path(name, search_directory='../', path_type='any'):
+def find_path(name, search_directory='./', path_type='any'):
     search_path = Path(search_directory)
 
     for path in search_path.rglob(name):
