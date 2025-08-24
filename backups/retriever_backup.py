@@ -1,16 +1,17 @@
 import faiss
 import json
-import glob
 import numpy as np
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import CrossEncoder
 
-base_path = "../intfloat_e5_large_v2"
-index_path = f"{base_path}/index/faiss.index"
-global_ids_path = f"{base_path}/index/global_ids.json"
+from util import find_path, find_all_paths, unzip_if_needed
 
-original_content_paths = glob.glob("../data/processed/*.jsonl")
+unzip_if_needed("faiss.index.zip")
+index_path = find_path("faiss.index")
+global_ids_path = find_path("global_ids.json")
+
+original_content_paths = find_all_paths("*.jsonl", "processed")
 
 try:
     index = faiss.read_index(index_path)
