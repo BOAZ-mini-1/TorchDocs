@@ -1,7 +1,27 @@
+import re
+from typing import Optional
+
 from generator_backup import generate_from_rerank
 from retriever_backup import search_and_rerank_pipeline
 
 import sys
+
+VERSION_PATTERNS = [                 # 일단 내가 생각나는 형식만... 적어봄
+    r"\b([0-9]\.[0-9])\b",           # "2.8"
+    r"\bv([0-9]\.[0-9])\b",          # "v2.8"
+    r"\bPyTorch\s*([0-9]\.[0-9])\b", # "PyTorch 2.8"
+    r"\bversion\s*([0-9]\.[0-9])\b", # "version 2.8"
+]
+
+def parse_version_from_query(q: str) -> Optional[str]:
+    q = q.strip()
+    for pat in VERSION_PATTERNS:
+        m = re.search(pat, q, flags=re.IGNORECASE)
+        if m:
+            return m.group(1)
+    return None
+
+
 
 def run_query(query: str):
     """
@@ -12,7 +32,8 @@ def run_query(query: str):
     """
     print(f"🔍 Retrieving and reranking documents for: '{query}'...")
     try:
-        retrieved_doc = search_and_rerank_pipeline(query)
+        version = parse_version_from_query(query)
+        retrieved_doc = search_and_rerank_pipeline(query, version=version)
 
         if not retrieved_doc:
             print("❌ Could not retrieve any relevant documents. Please try a different query.")
