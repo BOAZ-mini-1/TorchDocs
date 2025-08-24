@@ -5,8 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b88f3ec3-0ec8-4328-ac77-d7fe6a974d46" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backups/retriever_backup.py" beforeDir="false" afterPath="$PROJECT_DIR$/backups/retriever_backup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backups/generator_backup.py" beforeDir="false" afterPath="$PROJECT_DIR$/backups/generator_backup.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -236,9 +235,9 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/TorchDocs$generator.coverage" NAME="generator Coverage Results" MODIFIED="1756026196858" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/TorchDocs$retriever_backup.coverage" NAME="retriever_backup Coverage Results" MODIFIED="1756029208062" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backups" />
+    <SUITE FILE_PATH="coverage/TorchDocs$retriever_backup.coverage" NAME="retriever_backup Coverage Results" MODIFIED="1756029398457" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backups" />
     <SUITE FILE_PATH="coverage/TorchDocs$retriever.coverage" NAME="retriever Coverage Results" MODIFIED="1756028741231" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/TorchDocs$pipeline.coverage" NAME="pipeline Coverage Results" MODIFIED="1756027178930" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backups" />
+    <SUITE FILE_PATH="coverage/TorchDocs$pipeline.coverage" NAME="pipeline Coverage Results" MODIFIED="1756029403263" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backups" />
     <SUITE FILE_PATH="coverage/TorchDocs$retriver.coverage" NAME="retriver Coverage Results" MODIFIED="1755619945858" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
