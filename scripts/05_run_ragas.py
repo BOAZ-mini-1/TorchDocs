@@ -1,160 +1,83 @@
-# 5. RAGAS 실행(Qwen2.5‑14B‑Instruct + e5‑large‑v2)
+# 5. RAGAS 실행(Qwen2.5‑14B‑Instruct)
 
-# Usage (dry run to validate dataset columns):
-#   python 05_run_ragas.py --dry-run
-#
-# When ready to evaluate (wire judge & embeddings):
-#   python 05_run_ragas.py \
-#     --judge qwen2.5-14b-instruct \
-#     --emb intfloat/e5-large-v2 \
-#     --metrics faithfulness answer_relevance context_recall context_precision
-
-import json
-import argparse, json
+import json, argparse, torch
 from pathlib import Path
 
-if __name__ == "__main__" and False:
-    ...
+from datasets import Dataset
+from ragas.metrics import answer_correctness, faithfulness, context_precision, context_recall
+from ragas import evaluate
 
-import pandas as pd
-from typing import List
+# HF 파이프라인 기반 LLM/임베딩
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from sentence_transformers import SentenceTransformer
 
-try:
-    from ragas import evaluate
-    from ragas.metrics import faithfulness, answer_relevance, context_precision, context_recall
-except Exception:
-    evaluate = None
-    faithfulness = answer_relevance = context_precision = context_recall = None
+def build_llm(model_name: str):
+    tok = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    mdl = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        trust_remote_code=True,
+        torch_dtype="auto"
+    ).to("cuda" if torch.cuda.is_available() else "cpu")
+    return pipeline("text-generation", model=mdl, tokenizer=tok, max_new_tokens=512)
 
+def build_embedder(name="intfloat/e5-large-v2"):
+    return SentenceTransformer(name)
 
-def init_judge_llm(model_name: str):
-    """TODO: Return a RAGAS-compatible LLM client for the evaluator (judge).
-    Target: Qwen2.5-14B-Instruct.
+def load_ragas_jsonl(path: str):
+    rows = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            o = json.loads(line)
+            # 기대 형식: {"question","answer","contexts":[{"content":...},...], ...}
+            ctx_texts = []
+            for c in o.get("contexts") or []:
+                # 04_build_ragas_dataset.py에서 이미 정규화되어 있을 것
+                text = c.get("content") or c.get("text") or ""
+                if text:
+                    ctx_texts.append(text)
+            if not (o.get("question") and o.get("answer") and ctx_texts):
+                continue
+            rows.append({
+                "question": o["question"],
+                "answer": o["answer"],
+                "contexts": ctx_texts,
+                # ground_truth가 있으면 같이 넣기 (없으면 metrics 일부만)
+                "ground_truth": o.get("ground_truth") or "",
+            })
+    return Dataset.from_list(rows)
 
-    Options:
-    1) If you use LangChain wrappers, pass that LLM here (ragas accepts langchain LLMs).
-    2) Or use ragas' native integrations if available in your version.
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--in", dest="inp", type=str, required=True)
+    ap.add_argument("--report", type=str, default="data/eval/ragas_report.json")
+    ap.add_argument("--judge", type=str, default="Qwen/Qwen2.5-3B-Instruct")
+    ap.add_argument("--embed", type=str, default="intfloat/e5-large-v2")
+    args = ap.parse_args()
 
-    For now this is a hard placeholder to ensure you explicitly wire it.
-    """
-    raise NotImplementedError("Provide a judge LLM compatible with RAGAS (e.g., Qwen2.5-14B-Instruct)")
+    ds = load_ragas_jsonl(args.inp)
+    if len(ds) == 0:
+        raise SystemExit("No rows to evaluate in the input dataset.")
 
+    llm_pipe = build_llm(args.judge)
+    emb = build_embedder(args.embed)
 
-class E5LangChainLikeEmbeddings:
-    """Minimal adapter exposing embed_documents / embed_query for ragas.
-    Uses sentence-transformers under the hood.
-    """
-    def __init__(self, model_name: str = "intfloat/e5-large-v2"):
-        if SentenceTransformer is None:
-            raise RuntimeError("sentence-transformers is required for E5 embeddings")
-        self.model = SentenceTransformer(model_name)
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        # E5 passage encoding: prepend "passage: " if your corpus was encoded that way.
-        # If your existing embeddings did NOT include the prefix, keep it consistent.
-        return self.model.encode(texts, normalize_embeddings=True).tolist()
-
-    def embed_query(self, text: str) -> List[float]:
-        return self.model.encode([f"query: {text}"], normalize_embeddings=True)[0].tolist()
-
-
-def script_05_run_ragas(
-    dataset_filename: str = "ragas_synth.jsonl",
-    report_filename: str = "05_ragas_report.json",
-    judge: str = "qwen2.5-14b-instruct",
-    emb: str = "intfloat/e5-large-v2",
-    metrics: List[str] = None,
-    max_records: int = 0,
-    dry_run: bool = False,
-):
-    if metrics is None:
-        metrics = ["faithfulness", "answer_relevance", "context_recall", "context_precision"]
-
-    repo = Path(__file__).resolve().parents[0]
-    ds_path = repo / "data" / "eval" / dataset_filename
-    out_path = repo / "data" / "eval" / report_filename
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    rows = [json.loads(l) for l in ds_path.open("r", encoding="utf-8").read().splitlines() if l.strip()]
-    if max_records and max_records > 0:
-        rows = rows[:max_records]
-    df = pd.DataFrame(rows)
-
-    required_cols = {"question", "answer", "contexts"}
-    missing = required_cols - set(df.columns)
-    if missing:
-        raise ValueError(f"Dataset missing required columns: {missing}")
-
-    if dry_run:
-        print(f"[05] dataset rows: {len(df)}; columns: {list(df.columns)}")
-        print(df.head(3).to_string(index=False))
-        return
-
-    if evaluate is None:
-        raise RuntimeError("ragas is not installed or failed to import. Please install ragas >= 0.1.")
-
-    # Build metric objects
-    metric_objs = []
-    for m in metrics:
-        if m == "faithfulness":
-            metric_objs.append(faithfulness)
-        elif m == "answer_relevance":
-            metric_objs.append(answer_relevance)
-        elif m == "context_precision":
-            metric_objs.append(context_precision)
-        elif m == "context_recall":
-            metric_objs.append(context_recall)
-        else:
-            raise ValueError(f"Unknown metric: {m}")
-
-    # Init judge LLM and embeddings
-    llm = init_judge_llm(judge)
-    emb_client = E5LangChainLikeEmbeddings(emb)
-
-    # Evaluate
-    res = evaluate(
-        dataset=df,
-        metrics=metric_objs,
-        llm=llm,
-        embeddings=emb_client,
+    # ragas evaluate
+    result = evaluate(
+        ds,
+        metrics=[answer_correctness, faithfulness, context_precision, context_recall],
+        llm=llm_pipe,
+        embeddings=emb,
     )
 
-    # Save a JSON result; try a couple of common accessors
-    payload = None
-    for attr in ("to_json", "model_dump_json", "to_dict"):
-        if hasattr(res, attr):
-            try:
-                payload = getattr(res, attr)()
-                break
-            except Exception:
-                pass
-    if payload is None:
-        # Fallback: compute aggregated means if possible
-        try:
-            means = {m: float(getattr(res, m)) for m in metrics if hasattr(res, m)}
-            payload = json.dumps({"metrics": means}, ensure_ascii=False)
-        except Exception:
-            payload = json.dumps({"note": "RAGAS result serialization fallback"}, ensure_ascii=False)
+    Path(args.report).parent.mkdir(parents=True, exist_ok=True)
+    with open(args.report, "w", encoding="utf-8") as f:
+        json.dump({
+            "n": len(ds),
+            "scores": {k: float(v) for k, v in result["scores"].items()},
+        }, f, ensure_ascii=False, indent=2)
 
-    with out_path.open("w", encoding="utf-8") as f:
-        if isinstance(payload, str):
-            f.write(payload)
-        else:
-            f.write(json.dumps(payload, ensure_ascii=False))
-
-    print(f"[05] wrote report -> {out_path}")
-
+    print("[ragas] wrote:", args.report)
+    print(result)
 
 if __name__ == "__main__":
-    import sys
-    if Path(sys.argv[0]).name == "05_run_ragas.py":
-        p = argparse.ArgumentParser()
-        p.add_argument("--dataset-filename", default="ragas_synth.jsonl")
-        p.add_argument("--report-filename", default="05_ragas_report.json")
-        p.add_argument("--judge", default="qwen2.5-14b-instruct")
-        p.add_argument("--emb", default="intfloat/e5-large-v2")
-        p.add_argument("--metrics", nargs="*", default=["faithfulness", "answer_relevance", "context_recall", "context_precision"])
-        p.add_argument("--max-records", type=int, default=0)
-        p.add_argument("--dry-run", action="store_true")
-        args = p.parse_args()
-        script_05_run_ragas(**vars(args))
+    main()
