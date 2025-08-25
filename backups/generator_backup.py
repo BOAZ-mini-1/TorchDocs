@@ -60,35 +60,74 @@ except Exception as e:
     )
     raise
 
-# 모델 프롬프트
+# # ============================ ver1 ============================
+# # 모델 프롬프트
+# SYSTEM_MSG = ( 
+#     "You are a assistant for junior ai developer who uses pytorch framework. "
+#     "Respond as a helpful, concise chatbot in Markdown. "
+#     "Strictly ground every factual statement in the provided contexts and cite them inline as [#1], [#2], ... "
+#     "If the answer is uncertain or not supported, say so explicitly and suggest the closest supported guidance. "
+#     "Prefer the most recent PyTorch version when contexts disagree, but state the version you cite. "
+#     "If the user specifies a version, only use documents matching that version (metadata.version). "
+#     "Do NOT invent APIs or behavior not present in the contexts. "
+#     "Keep code minimal and runnable. "
+#     "Language: English."
+# )
+
+# # 사용자 프롬프트
+# USER_TEMPLATE = """ # User Question  
+# {query}
+
+# # What you MUST do
+# - Write the answer in **clear Markdown** with this structure:
+#   1) **Summary** — 2–3 bullet points with the direct answer.
+#   2) **Explanation** — brief reasoning and when to use it, citing sources inline like [#1].
+#   3) **Example** — a minimal, runnable code snippet (if relevant).
+#   4) **Notes & Pitfalls** — edge cases, version differences (mention version numbers), and common mistakes.
+# - Only use information present in the reference documents. If evidence is insufficient, write: *"The provided references don't fully support X."* and stop.
+# - When multiple versions appear, prefer the **newest version** but **name the version(s)** you used.
+# - **If the user specifies a version, only use documents from that version. If no documents match, say so explicitly.**
+# - Keep the final answer under ~250–300 words unless the user asked for more.
+
+# """
+
+# ============================ ver2 ============================
+# 시스템 프롬프트
 SYSTEM_MSG = ( 
-    "You are a assistant for junior ai developer who uses pytorch framework. "
-    "Respond as a helpful, concise chatbot in Markdown. "
-    "Strictly ground every factual statement in the provided contexts and cite them inline as [#1], [#2], ... "
-    "If the answer is uncertain or not supported, say so explicitly and suggest the closest supported guidance. "
-    "Prefer the most recent PyTorch version when contexts disagree, but state the version you cite. "
-    "If the user specifies a version, only use documents matching that version (metadata.version). "
-    "Do NOT invent APIs or behavior not present in the contexts. "
-    "Keep code minimal and runnable. "
-    "Language: English."
+    "당신은 PyTorch 프레임워크를 사용하는 주니어 AI 개발자를 돕는 조수입니다. "
+    "항상 간결하게 **마크다운** 형식으로 대답하세요. "
+    "모든 사실은 반드시 제공된 컨텍스트에 근거해야 하며, 출처를 [#1], [#2] 형식으로 표시하세요. "
+    "만약 답변이 불확실하거나 자료에 없는 경우, 그렇게 명시하고 가장 근접한 근거를 제안하세요. "
+    "컨텍스트에 서로 다른 버전이 있으면 최신 PyTorch 버전을 우선 사용하되, 어떤 버전인지 반드시 밝히세요. "
+    "사용자가 특정 버전을 지정하면 해당 버전 문서(metadata.version)만 사용하세요. "
+    "존재하지 않는 API나 동작은 절대 만들어내지 마세요. "
+    "코드는 최소한으로 간단하고 실행 가능하도록 작성하세요. "
+    "답변은 반드시 한국어로 작성하세요."
 )
 
 # 사용자 프롬프트
-USER_TEMPLATE = """# User Question  
+'''
+사용자 질문 + RAG 컨텍스트 기반 답변 구조 강제
+요약 / 설명 / 예제 / 주의사항 4단계 구성
+Evidence 부족 시 명확히 표시
+출력은 한국어
+'''
+USER_TEMPLATE = """# 사용자 질문  
 {query}
 
-# What you MUST do
-- Write the answer in **clear Markdown** with this structure:
-  1) **Summary** — 2–3 bullet points with the direct answer.
-  2) **Explanation** — brief reasoning and when to use it, citing sources inline like [#1].
-  3) **Example** — a minimal, runnable code snippet (if relevant).
-  4) **Notes & Pitfalls** — edge cases, version differences (mention version numbers), and common mistakes.
-- Only use information present in the reference documents. If evidence is insufficient, write: *"The provided references don't fully support X."* and stop.
-- When multiple versions appear, prefer the **newest version** but **name the version(s)** you used.
-- **If the user specifies a version, only use documents from that version. If no documents match, say so explicitly.**
-- Keep the final answer under ~250–300 words unless the user asked for more.
-
+# 답변 작성 지침
+- 답변은 **명확한 마크다운** 구조로 작성하세요:
+  1) **요약** — 핵심 답변을 2~3개 불릿 포인트로 정리
+  2) **설명** — 간단한 이유와 활용 상황, [#1]처럼 출처 표시
+  3) **예제** — 실행 가능한 최소 코드 스니펫 (필요한 경우)
+  4) **주의사항** — 버전 차이, 엣지 케이스, 흔한 실수 등을 정리
+- 참고 문서에 있는 정보만 사용하세요. 충분한 근거가 없다면: *"제공된 문서에는 X에 대한 충분한 근거가 없습니다."* 라고만 작성하고 멈추세요.
+- 여러 버전이 있으면 **최신 버전**을 우선하되, 사용한 버전을 명시하세요.
+- 사용자가 특정 버전을 지정하면 해당 버전 문서만 사용하세요. 문서가 없으면 "해당 버전에 맞는 문서를 찾을 수 없습니다."라고 하세요.
+- 답변은 특별히 요구하지 않는 한 **250~300단어 이내**로 유지하세요.
+- 답변은 반드시 한국어로 작성하세요.
 """
+
 
 def _shorten(s: str, n: int) -> str:
     s = (s or "").strip()
@@ -282,7 +321,7 @@ def generate_from_rerank(
 
 # ============================
 
-# # (선택) 모듈 단독 테스트용 - retriever/reranker 결과 가정 (예제1)
+# # (선택) 모듈 단일 테스트용 - retriever/reranker 결과 가정
 # if __name__ == "__main__":
 #     demo_query = "How can I check if an object's code came from torch.package?"
 #     demo_reranked = [{
@@ -293,31 +332,6 @@ def generate_from_rerank(
 #             "code_blocks": [{"lang": "python", "code": "assert is_from_package(mod) ..."}],
 #             "metadata": {"title": "Distinguishing between packaged and non-packaged code",
 #                          "url": "pytorch_docs_2.7/...", "version": "2.7"}
-#         }
-#     }]
-#     res = generate_from_rerank(demo_query, demo_reranked)
-#     print(res["answer"])
-#     print(res["used_refs"])
-
-
-# # (선택) 모듈 단독 테스트용 - retriever/reranker 결과 가정 (예제2)
-# if __name__ == "__main__":
-#     demo_query = "How can I save and load a model in PyTorch?"
-#     demo_reranked = [{
-#         "distance": 0.83, "rerank_score": 8.5,
-#         "doc_info": {
-#             "id": "42ab...",
-#             "content": "In PyTorch, you can persist model weights with torch.save and restore them with torch.load. "
-#                        "It is recommended to save the state_dict instead of the full model object.",
-#             "code_blocks": [
-#                 {"lang": "python", "code": "torch.save(model.state_dict(), 'model.pth')\n"
-#                                            "model.load_state_dict(torch.load('model.pth'))"}
-#             ],
-#             "metadata": {
-#                 "title": "Saving and Loading Models",
-#                 "url": "pytorch_docs_2.7/serialization",
-#                 "version": "2.7"
-#             }
 #         }
 #     }]
 #     res = generate_from_rerank(demo_query, demo_reranked)
