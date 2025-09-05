@@ -2,6 +2,10 @@
 - Directory architecture (draft)
 - raw, embeddings 폴더는 용량이 커서 충돌이 일어나므로 업로드 하지 않았음 (.gitignore 참고)
 
+### 시연 영상
+https://drive.google.com/file/d/1OQXOs_xkl86uyg7-KKbNhx7GIHCBm9-q/view
+
+
 ### Location Notices
 - 인덱스: intfloat_e5_large_v2/index/faiss.index (필수 배치)
 - id 매핑: intfloat_e5_large_v2/embeddings/id_mapping_*.json
